@@ -1,6 +1,8 @@
 package com.charlton.models
 
-data class AnimationRow(var pose: String, var set: AnimationSet) {
+import java.io.Serializable
+
+data class AnimationRow(var pose: String, var set: AnimationSet) : Serializable {
     fun add(bounds: SpriteBounds){
         set.add(bounds)
     }

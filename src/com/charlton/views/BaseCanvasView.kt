@@ -12,23 +12,54 @@ import java.io.File
 import javax.imageio.ImageIO
 
 
-open class BaseCanvasView(protected var canvas: Canvas, file: File) : EventHandler<MouseEvent?> {
+open class BaseCanvasView : EventHandler<MouseEvent?> {
 
-    protected var pressing = BooleanArray(1024)
+    constructor(canvas: Canvas) {
+        this.canvas = canvas
+        this.pressing = BooleanArray(1024)
+        this.canvas.onDragDetected = this
+        this.canvas.onMouseClicked = this
+        this.canvas.onMouseDragEntered = this
+        this.canvas.onMouseDragReleased = this
+        this.canvas.onMouseDragged = this
+        this.canvas.onMouseDragEntered = this
+        this.canvas.onMouseDragExited = this
+        this.canvas.onMouseEntered = this
+        this.canvas.onMouseExited = this
+        this.canvas.setOnKeyPressed { e: KeyEvent -> keyPressed(e) }
+        this.canvas.setOnKeyReleased { e: KeyEvent -> keyReleased(e) }
+        this.canvas.isFocusTraversable = true
+    }
+
+    constructor(canvas: Canvas, file: File) : this(canvas) {
+        this.file = file
+    }
+
+
+    protected var canvas: Canvas
+    protected var pressing: BooleanArray
     private var last_y = 0.0
     private var last_x = 0.0
 
-    var file: File = file
-        set(value){
+
+    var file: File? = null
+        set(value) {
             field = value
-            redraw()
+            if (value != null) {
+                redraw()
+            }
         }
 
-    protected fun redraw() {
+    val isInitialized
+        get() = file != null
+
+    protected open fun redraw(): BufferedImage {
+        canvas.graphicsContext2D.clearRect(0.0, 0.0, canvas.width, canvas.height)
         val image = ImageIO.read(file)
         canvas.width = image.width.toDouble()
         canvas.height = image.height.toDouble()
         draw(image)
+        return image;
     }
 
     fun draw(toFXImage: WritableImage?) {
@@ -46,10 +77,11 @@ open class BaseCanvasView(protected var canvas: Canvas, file: File) : EventHandl
     }
 
     fun clear() {
+        file = null
         canvas.graphicsContext2D.clearRect(0.0, 0.0, canvas.width, canvas.height)
     }
 
-    override fun handle(event: MouseEvent?) {}
+    override fun handle(event: MouseEvent?) = Unit
 
 
     open fun keyPressed(e: KeyEvent) {
@@ -113,17 +145,4 @@ open class BaseCanvasView(protected var canvas: Canvas, file: File) : EventHandl
         val keyQuote = KeyCode.QUOTE.ordinal
     }
 
-    init {
-        this.canvas.onMouseClicked = this
-        this.canvas.onMouseDragEntered = this
-        this.canvas.onMouseDragReleased = this
-        this.canvas.onMouseDragged = this
-        this.canvas.onMouseDragEntered = this
-        this.canvas.onMouseDragExited = this
-        this.canvas.onMouseEntered = this
-        this.canvas.onMouseExited = this
-        this.canvas.setOnKeyPressed { e: KeyEvent -> keyPressed(e) }
-        this.canvas.setOnKeyReleased { e: KeyEvent -> keyReleased(e) }
-        this.canvas.isFocusTraversable = true
-    }
 }

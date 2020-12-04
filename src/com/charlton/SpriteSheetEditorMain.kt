@@ -6,7 +6,6 @@ import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.stage.Stage
 
-
 class SpriteSheetEditorMain: Application() {
 
     override fun start(primaryStage: Stage?) {
@@ -15,4 +14,5 @@ class SpriteSheetEditorMain: Application() {
         primaryStage.scene = Scene(root)
         primaryStage.show()
     }
+
 }

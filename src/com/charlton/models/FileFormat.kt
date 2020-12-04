@@ -1,6 +1,8 @@
 package com.charlton.models
+import java.io.Serializable
+import java.util.*
 
 data class FileFormat(
     var image: String,
-    var poses: List<AnimationRow>
-)
+    var poses: LinkedList<AnimationRow>
+): Serializable

@@ -7,12 +7,14 @@ import com.charlton.models.FileFormat
 import com.charlton.views.SpriteCanvasSelectionView
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.sun.corba.se.impl.orbutil.ObjectWriter
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import javafx.scene.control.cell.PropertyValueFactory
 import java.awt.image.BufferedImage
-import java.io.File
-import java.io.FileNotFoundException
+import java.io.*
+import java.util.*
+import kotlin.collections.ArrayList
 
 fun TableView<AnimationRow>.init(
     spriteCanvasSelectionView: SpriteCanvasSelectionView
@@ -40,8 +42,19 @@ fun TableView<AnimationRow>.init(
     return map
 }
 
-fun TableView<AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File) {
-    val format = Gson().fromJson(file.readText(), FileFormat::class.java)
+
+fun TableView<AnimationRow>.loadSerialized(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File) {
+    ObjectInputStream(FileInputStream(file)).use {
+        val pose = it.readObject()
+        when (pose) {
+            is FileFormat -> load(spriteCanvasSelectionView, file, pose)
+            else -> println("Deserialization failed")
+        }
+    }
+}
+
+
+fun TableView<AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File, format: FileFormat) {
     val imagePath = "${file.parent}/${format.image}"
     val imageFile = File(imagePath)
     if (imageFile.exists()) {
@@ -52,6 +65,12 @@ fun TableView<AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectio
     } else {
         throw FileNotFoundException("$imagePath, Couldnt find relative to location")
     }
+}
+
+fun TableView<AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File) {
+    val format = Gson().fromJson(file.readText(), FileFormat::class.java)
+    load(spriteCanvasSelectionView, file, format)
+
 }
 
 fun TableView<AnimationRow>.hasPose(pose: String): Boolean {
@@ -78,7 +97,9 @@ fun TableView<AnimationRow>.removeLastInserted() {
 }
 
 fun TableView<AnimationRow>.map(filename: String): FileFormat {
-    return FileFormat(filename, items)
+    val lists = LinkedList<AnimationRow>()
+    lists.addAll(items)
+    return FileFormat(filename, lists)
 }
 
 fun TableView<AnimationRow>.map(image: File): FileFormat {
@@ -92,6 +113,13 @@ fun TableView<AnimationRow>.save(file: File, imageFile: File) {
 fun TableView<AnimationRow>.save(file: File, imageFilename: String) {
     file.writeText(json(imageFilename))
 }
+
+fun TableView<AnimationRow>.saveSerialized(file: File, imageFilename: File) {
+    ObjectOutputStream(FileOutputStream(file)).use {
+        it.writeObject(map(imageFilename))
+    }
+}
+
 
 fun TableView<AnimationRow>.json(imageFile: File): String {
     return GsonBuilder().setPrettyPrinting().create().toJson(map(imageFile))

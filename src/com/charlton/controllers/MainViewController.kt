@@ -58,6 +58,7 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
     }
     var imageExtensionFilter = FileChooser.ExtensionFilter("Image", "*.png", "*.gif")
     var jsonExtensionFilter = FileChooser.ExtensionFilter("Json", "*.json")
+    var poseExtensionFilter = FileChooser.ExtensionFilter("Pose", "*.pose")
     private var fileChooser: FileChooser = FileChooser().also {
         it.initialDirectory = File("./assets/sheets")
     }
@@ -99,7 +100,11 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
     override fun handle(event: ActionEvent?) {
         when (event?.source) {
             aboutMenuItem -> {
-                alert("About", "Dev: Mr-Smithy-x@github.com","Parsing & rearranging sheets is an nuisance").showAndWait()
+                alert(
+                    "About",
+                    "Dev: Mr-Smithy-x@github.com",
+                    "Parsing & rearranging sheets is an nuisance"
+                ).showAndWait()
             }
             newMenuItem -> {
                 spriteCanvasSelectionView.clear()
@@ -112,20 +117,28 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
                 }
             }
             openMenuItem -> {
-                fileChooser.extensionFilters.setAll(jsonExtensionFilter)
+                fileChooser.extensionFilters.setAll(poseExtensionFilter, jsonExtensionFilter)
                 val file = fileChooser.showOpenDialog(null)
                 if (file != null && file.exists()) {
-                    tableView.load(spriteCanvasSelectionView, file);
+                    if (file.extension == "pose") {
+                        tableView.loadSerialized(spriteCanvasSelectionView, file)
+                    } else {
+                        tableView.load(spriteCanvasSelectionView, file)
+                    }
                 }
             }
             saveMenuItem -> {
                 if (spriteCanvasSelectionView.isInitialized) {
                     val imageFile = spriteCanvasSelectionView.file!!
-                    fileChooser.extensionFilters.setAll(jsonExtensionFilter)
-                    fileChooser.initialFileName = imageFile.nameWithoutExtension + ".json"
+                    fileChooser.extensionFilters.setAll(poseExtensionFilter, jsonExtensionFilter)
+                    fileChooser.initialFileName = imageFile.nameWithoutExtension
                     val file = fileChooser.showSaveDialog(null)
                     if (file != null) {
-                        tableView.save(file, imageFile)
+                        if (file.extension == "pose") {
+                            tableView.saveSerialized(file, imageFile)
+                        } else {
+                            tableView.save(file, imageFile)
+                        }
                     }
                 } else alert(
                     "Hmmm",

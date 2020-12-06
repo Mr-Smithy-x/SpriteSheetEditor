@@ -1,3 +1,4 @@
+package com.charlton.models
 
 import java.io.File
 import java.io.FileInputStream

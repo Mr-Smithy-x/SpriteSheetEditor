@@ -1,6 +1,7 @@
 package com.charlton.views
 
 import com.charlton.algorithms.FloodFillAlgorithm
+import com.charlton.models.FileFormat
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.canvas.Canvas
 import javafx.scene.input.MouseEvent

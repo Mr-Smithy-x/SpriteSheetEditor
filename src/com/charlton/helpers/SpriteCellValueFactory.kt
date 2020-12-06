@@ -1,6 +1,6 @@
 package com.charlton.helpers
 
-import FileFormat
+import com.charlton.models.FileFormat
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingFXUtils

@@ -1,7 +1,7 @@
 package com.charlton.extensions
 
-import FileFormat
 import com.charlton.helpers.SpriteCellValueFactory
+import com.charlton.models.FileFormat
 import com.charlton.views.SpriteCanvasSelectionView
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder

@@ -1,6 +1,7 @@
 package com.charlton.controllers
 
 import com.charlton.extensions.*
+import com.charlton.models.FileFormat
 import com.charlton.views.SpriteCanvasSelectionView
 import javafx.application.Platform
 import javafx.event.ActionEvent

@@ -1,6 +1,6 @@
 package com.charlton.helpers
 
-import com.charlton.models.AnimationRow
+import FileFormat
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingFXUtils
@@ -10,9 +10,9 @@ import javafx.util.Callback
 import java.awt.image.BufferedImage
 
 class SpriteCellValueFactory(val index: Int, val image: BufferedImage) :
-    Callback<TableColumn.CellDataFeatures<AnimationRow, Any>, ObservableValue<Any>> {
+    Callback<TableColumn.CellDataFeatures<FileFormat.AnimationRow, Any>, ObservableValue<Any>> {
 
-    override fun call(data: TableColumn.CellDataFeatures<AnimationRow, Any>): ObservableValue<Any> {
+    override fun call(data: TableColumn.CellDataFeatures<FileFormat.AnimationRow, Any>): ObservableValue<Any> {
         if (index < data.value.set.size) {
             val value = data.value.set.toTypedArray()[index]
             val image = image.getSubimage(value.x, value.y, value.w, value.h)

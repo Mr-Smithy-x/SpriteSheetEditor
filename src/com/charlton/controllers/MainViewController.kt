@@ -1,8 +1,6 @@
 package com.charlton.controllers
 
 import com.charlton.extensions.*
-import com.charlton.models.AnimationRow
-import com.charlton.models.SpriteBounds
 import com.charlton.views.SpriteCanvasSelectionView
 import javafx.application.Platform
 import javafx.event.ActionEvent
@@ -25,6 +23,12 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
     lateinit var openMenuItem: MenuItem
 
     @FXML
+    lateinit var evenModeMenuItem: MenuItem
+
+    @FXML
+    lateinit var fineModeMenuItem: MenuItem
+
+    @FXML
     lateinit var saveMenuItem: MenuItem
 
     @FXML
@@ -43,7 +47,7 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
     lateinit var addImageBtn: Button
 
     @FXML
-    lateinit var tableView: TableView<AnimationRow>
+    lateinit var tableView: TableView<FileFormat.AnimationRow>
 
     @FXML
     lateinit var selectPoseCombobox: ComboBox<String>
@@ -59,9 +63,7 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
     var imageExtensionFilter = FileChooser.ExtensionFilter("Image", "*.png", "*.gif")
     var jsonExtensionFilter = FileChooser.ExtensionFilter("Json", "*.json")
     var poseExtensionFilter = FileChooser.ExtensionFilter("Pose", "*.pose")
-    private var fileChooser: FileChooser = FileChooser().also {
-        it.initialDirectory = File("./assets/sheets")
-    }
+    private var fileChooser: FileChooser = FileChooser()
     //endregion
 
     @FXML
@@ -73,6 +75,8 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
         aboutMenuItem.onAction = this
         addPoseBtn.onAction = this
         addImageBtn.onAction = this
+        evenModeMenuItem.onAction = this
+        fineModeMenuItem.onAction = this
         spriteCanvasSelectionView.callback = this
         tableView.selectionModel.selectedItemProperty().addListener { _, _, newValue ->
             newValue?.run {
@@ -97,8 +101,46 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
         it.contentText = contentText
     }
 
+    private fun addOption(text: String){
+        if (spriteCanvasSelectionView.isInitialized) {
+            if (!tableView.hasPose(text)) {
+                selectPoseCombobox.items.add(text)
+                selectPoseCombobox.selectionModel.select(text)
+                tableView.addOption(text)
+            } else alert(
+                "Error",
+                "We ran into a conflict",
+                "You already have '$text' listed already",
+                Alert.AlertType.ERROR
+            ).showAndWait()
+        } else {
+            alert(
+                "Error",
+                "We ran into an issue",
+                "App needs to be initialized",
+                Alert.AlertType.ERROR
+            ).showAndWait()
+        }
+    }
+
     override fun handle(event: ActionEvent?) {
         when (event?.source) {
+            fineModeMenuItem -> {
+                spriteCanvasSelectionView.mode = SpriteCanvasSelectionView.SelectionMode.FINE
+            }
+            evenModeMenuItem -> {
+                val result = TextInputDialog("Dimension").also {
+                    it.headerText = "What dimension is the SpriteSheet? (Numeric)"
+                }.showAndWait()
+                when {
+                    result.get().toIntOrNull() is Int -> spriteCanvasSelectionView.mode = SpriteCanvasSelectionView.SelectionMode.EVEN.also {
+                        it.dimension = result.get().toInt()
+                    }
+                    else -> {
+                        alert("Error", "Value isn't numeric", "The value specified is invalid, please enter a number", Alert.AlertType.ERROR).showAndWait()
+                    }
+                }
+            }
             aboutMenuItem -> {
                 alert(
                     "About",
@@ -108,15 +150,26 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
             }
             newMenuItem -> {
                 spriteCanvasSelectionView.clear()
+                fileChooser.initialDirectory = File("./assets/sheets").also {
+                    if(!it.exists()) {
+                        it.mkdir()
+                    }
+                }
                 fileChooser.extensionFilters.setAll(imageExtensionFilter)
                 val file = fileChooser.showOpenDialog(null)
                 if (file != null && file.exists()) {
                     spriteCanvasSelectionView.file = file
                     tableView.init(spriteCanvasSelectionView)
                     tableView.items.clear()
+                    selectPoseCombobox.items.clear()
                 }
             }
             openMenuItem -> {
+                fileChooser.initialDirectory = File("./assets/poses").also {
+                    if(!it.exists()) {
+                        it.mkdir()
+                    }
+                }
                 fileChooser.extensionFilters.setAll(poseExtensionFilter, jsonExtensionFilter)
                 val file = fileChooser.showOpenDialog(null)
                 if (file != null && file.exists()) {
@@ -125,11 +178,19 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
                     } else {
                         tableView.load(spriteCanvasSelectionView, file)
                     }
+                    selectPoseCombobox.items.clear()
+                    selectPoseCombobox.items.addAll(tableView.poses)
+                    selectPoseCombobox.selectionModel.select(0)
                 }
             }
             saveMenuItem -> {
                 if (spriteCanvasSelectionView.isInitialized) {
                     val imageFile = spriteCanvasSelectionView.file!!
+                    fileChooser.initialDirectory = File("./assets/poses").also {
+                        if(!it.exists()) {
+                            it.mkdir()
+                        }
+                    }
                     fileChooser.extensionFilters.setAll(poseExtensionFilter, jsonExtensionFilter)
                     fileChooser.initialFileName = imageFile.nameWithoutExtension
                     val file = fileChooser.showSaveDialog(null)
@@ -152,27 +213,9 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
                 exitProcess(0)
             }
             addPoseBtn -> {
-                if (spriteCanvasSelectionView.isInitialized) {
-                    val text = poseTextField.text.trim().toUpperCase()
-                    poseTextField.clear()
-                    if (!tableView.hasPose(text)) {
-                        selectPoseCombobox.items.add(text)
-                        selectPoseCombobox.selectionModel.select(text)
-                        tableView.add(text)
-                    } else alert(
-                        "Error",
-                        "We ran into a conflict",
-                        "You already have '$text' listed already",
-                        Alert.AlertType.ERROR
-                    ).showAndWait()
-                } else {
-                    alert(
-                        "Error",
-                        "We ran into an issue",
-                        "App needs to be initialized",
-                        Alert.AlertType.ERROR
-                    ).showAndWait()
-                }
+                val text = poseTextField.text.trim().toUpperCase()
+                poseTextField.clear()
+                addOption(text)
             }
             addImageBtn -> {
                 if (spriteCanvasSelectionView.isInitialized) {
@@ -192,7 +235,7 @@ class MainViewController : EventHandler<ActionEvent>, SpriteCanvasSelectionView.
         }
     }
 
-    override fun onDoubleClicked(bounds: SpriteBounds) {
+    override fun onDoubleClicked(bounds: FileFormat.SpriteBounds) {
         tableView.find(selectPoseCombobox.selectionModel.selectedItem)?.add(bounds)
         tableView.refresh()
     }

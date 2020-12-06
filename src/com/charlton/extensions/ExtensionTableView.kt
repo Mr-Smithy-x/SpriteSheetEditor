@@ -1,13 +1,10 @@
 package com.charlton.extensions
 
+import FileFormat
 import com.charlton.helpers.SpriteCellValueFactory
-import com.charlton.models.AnimationRow
-import com.charlton.models.AnimationSet
-import com.charlton.models.FileFormat
 import com.charlton.views.SpriteCanvasSelectionView
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.sun.corba.se.impl.orbutil.ObjectWriter
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import javafx.scene.control.cell.PropertyValueFactory
@@ -16,34 +13,39 @@ import java.io.*
 import java.util.*
 import kotlin.collections.ArrayList
 
-fun TableView<AnimationRow>.init(
+
+val TableView<FileFormat.AnimationRow>.poses: List<String>
+    get() = items.map { it.pose }
+
+fun TableView<FileFormat.AnimationRow>.init(
     spriteCanvasSelectionView: SpriteCanvasSelectionView
-): List<TableColumn<AnimationRow, Any>> {
+): List<TableColumn<FileFormat.AnimationRow, Any>> {
     return init(spriteCanvasSelectionView.image)
 }
 
-fun TableView<AnimationRow>.init(
+fun TableView<FileFormat.AnimationRow>.init(
     image: BufferedImage
-): List<TableColumn<AnimationRow, Any>> {
-    val map = ArrayList<TableColumn<AnimationRow, Any>>()
+): List<TableColumn<FileFormat.AnimationRow, Any>> {
+    val map = ArrayList<TableColumn<FileFormat.AnimationRow, Any>>()
     for (i in 0..16) {
         if (i == 0) {
-            val element = TableColumn<AnimationRow, Any>("Pose")
+            val element = TableColumn<FileFormat.AnimationRow, Any>("Pose")
             element.cellValueFactory = PropertyValueFactory("pose")
             map.add(element)
         } else {
-            val element = TableColumn<AnimationRow, Any>("F:$i")
+            val element = TableColumn<FileFormat.AnimationRow, Any>("F:$i")
             element.cellValueFactory = SpriteCellValueFactory(i - 1, image)
             map.add(element)
         }
     }
+    items.clear()
     columns.clear()
     columns.addAll(map)
     return map
 }
 
 
-fun TableView<AnimationRow>.loadSerialized(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File) {
+fun TableView<FileFormat.AnimationRow>.loadSerialized(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File) {
     ObjectInputStream(FileInputStream(file)).use {
         val pose = it.readObject()
         when (pose) {
@@ -54,12 +56,13 @@ fun TableView<AnimationRow>.loadSerialized(spriteCanvasSelectionView: SpriteCanv
 }
 
 
-fun TableView<AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File, format: FileFormat) {
+fun TableView<FileFormat.AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File, format: FileFormat) {
     val imagePath = "${file.parent}/${format.image}"
     val imageFile = File(imagePath)
     if (imageFile.exists()) {
         spriteCanvasSelectionView.file = imageFile
         init(spriteCanvasSelectionView.image)
+        items.removeAll()
         items.addAll(format.poses)
         refresh()
     } else {
@@ -67,17 +70,17 @@ fun TableView<AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectio
     }
 }
 
-fun TableView<AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File) {
+fun TableView<FileFormat.AnimationRow>.load(spriteCanvasSelectionView: SpriteCanvasSelectionView, file: File) {
     val format = Gson().fromJson(file.readText(), FileFormat::class.java)
     load(spriteCanvasSelectionView, file, format)
 
 }
 
-fun TableView<AnimationRow>.hasPose(pose: String): Boolean {
+fun TableView<FileFormat.AnimationRow>.hasPose(pose: String): Boolean {
     return items.any { it.pose.equals(pose, true) }
 }
 
-fun TableView<AnimationRow>.find(pose: String): AnimationRow? {
+fun TableView<FileFormat.AnimationRow>.find(pose: String): FileFormat.AnimationRow? {
     return items.find {
         it.pose.equals(
             pose,
@@ -86,46 +89,49 @@ fun TableView<AnimationRow>.find(pose: String): AnimationRow? {
     }
 }
 
-fun TableView<AnimationRow>.add(pose: String) {
-    items.add(AnimationRow(pose, AnimationSet()))
-}
-
-fun TableView<AnimationRow>.removeLastInserted() {
-    val item = selectionModel.selectedItem
-    item.set.remove(item.set.last())
+fun TableView<FileFormat.AnimationRow>.addOption(pose: String) {
+    items.add(FileFormat.AnimationRow(pose, FileFormat.AnimationSet()))
     refresh()
 }
 
-fun TableView<AnimationRow>.map(filename: String): FileFormat {
-    val lists = LinkedList<AnimationRow>()
+fun TableView<FileFormat.AnimationRow>.removeLastInserted() {
+    val item = selectionModel.selectedItem
+    if(!item.set.isEmpty()) {
+        item.set.remove(item.set.last())
+        refresh()
+    }
+}
+
+fun TableView<FileFormat.AnimationRow>.map(filename: String): FileFormat {
+    val lists = LinkedList<FileFormat.AnimationRow>()
     lists.addAll(items)
     return FileFormat(filename, lists)
 }
 
-fun TableView<AnimationRow>.map(image: File): FileFormat {
+fun TableView<FileFormat.AnimationRow>.map(image: File): FileFormat {
     return map(image.name)
 }
 
-fun TableView<AnimationRow>.save(file: File, imageFile: File) {
+fun TableView<FileFormat.AnimationRow>.save(file: File, imageFile: File) {
     file.writeText(json(imageFile))
 }
 
-fun TableView<AnimationRow>.save(file: File, imageFilename: String) {
+fun TableView<FileFormat.AnimationRow>.save(file: File, imageFilename: String) {
     file.writeText(json(imageFilename))
 }
 
-fun TableView<AnimationRow>.saveSerialized(file: File, imageFilename: File) {
+fun TableView<FileFormat.AnimationRow>.saveSerialized(file: File, imageFilename: File) {
     ObjectOutputStream(FileOutputStream(file)).use {
         it.writeObject(map(imageFilename))
     }
 }
 
 
-fun TableView<AnimationRow>.json(imageFile: File): String {
+fun TableView<FileFormat.AnimationRow>.json(imageFile: File): String {
     return GsonBuilder().setPrettyPrinting().create().toJson(map(imageFile))
 }
 
-fun TableView<AnimationRow>.json(filename: String): String {
+fun TableView<FileFormat.AnimationRow>.json(filename: String): String {
     return GsonBuilder().setPrettyPrinting().create().toJson(map(filename))
 }
 
